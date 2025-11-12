@@ -29,6 +29,15 @@ pub struct Genre {
     pub name: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SearchItem {
+    pub id: u64, 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub game: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
 pub struct IGDBManager {
     client_id: String,
     access_token: String,
@@ -59,6 +68,23 @@ impl IGDBManager {
             .await?;
         let platforms: Vec<Platform> = response.json().await?;
         Ok(platforms)
+    }
+
+    async fn get_game_by_id(&self, id: u64) -> Result<Game, Box<dyn std::error::Error>> {
+        let url = format!("{}/v4/games", IGDB_URL);
+        let client = reqwest::Client::new();
+        let response = client
+            .post(&url)
+            .header("Client-ID", &self.client_id)
+            .header("Authorization", format!("Bearer {}", &self.access_token))
+            .body(format!("fields *; where id = {};", id))
+            .send()
+            .await?;
+        let mut games: Vec<Game> = response.json().await?;
+        match games.pop() {
+            Some(game) => Ok(game),
+            None => Err("No game found for the given ID".into()),
+        }
     }
 
     async fn get_genres_by_ids(&self, ids: Vec<u64>) -> Result<Vec<Genre>, Box<dyn std::error::Error>> {
@@ -106,6 +132,29 @@ impl IGDBManager {
             println!("First Release Date: {:?}", game.first_release_date.unwrap_or_default());
             let genres = self.get_genres_by_ids(game.genres.clone().unwrap_or_default()).await.unwrap_or(Vec::new());
             println!("Genres: {:?}", genres.iter().map(|g| g.name.clone().unwrap_or_default()).collect::<Vec<_>>());
+        }
+        Ok(games)
+    }
+
+    pub async fn search_games(&self, query: String) -> Result<Vec<Game>, Box<dyn std::error::Error>> {
+        let url = format!("{}/v4/search", IGDB_URL);
+        let client = reqwest::Client::new();
+        let response = client
+            .post(&url)
+            .header("Client-ID", &self.client_id)
+            .header("Authorization", format!("Bearer {}", &self.access_token))
+            .body(format!("search \"{}\"; fields game,name; limit 10;", query))
+            .send()
+            .await?;
+
+        let search_items: Vec<SearchItem> = response.json().await?;
+        let mut games: Vec<Game> = Vec::new();
+        for search_item in &search_items {
+            if search_item.game.is_some() {
+                let game = self.get_game_by_id(search_item.game.unwrap()).await?;
+                println!("Game: {:?}", game.name.clone().unwrap_or_default());
+                games.push(game);
+            }
         }
         Ok(games)
     }

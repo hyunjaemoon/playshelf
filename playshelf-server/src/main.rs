@@ -54,7 +54,7 @@ async fn main() {
     let client_id = env::var("TWITCH_CLIENT_ID")
         .expect("TWITCH_CLIENT_ID must be set in .env file");
     let igdb_manager = IGDBManager::new(client_id, _twitch_credentials.access_token);
-    let _game_result = igdb_manager.get_games().await.expect("Failed to get game list");
+    let _search_result = igdb_manager.search_games("Zelda".to_string()).await.expect("Failed to get game list");
 
     // build our application with a single route
     // let app = Router::new().route("/", get(|| async { "Hello, World!" }));

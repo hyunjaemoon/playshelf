@@ -1,62 +1,32 @@
-mod igdb;
 mod args;
+mod igdb;
 
 use axum::{
     routing::get,
     Router,
 };
+use chrono::{DateTime, Utc};
 use dotenv::dotenv;
-use igdb::IGDBManager;
-use serde::Deserialize;
-use std::env;
+use igdb::manager::IGDBManager;
 
 use crate::args::Args;
 use clap::Parser;
 
-#[derive(Debug, Deserialize)]
-struct TwitchTokenResponse {
-    access_token: String,
-    expires_in: u64,
-    token_type: String,
-}
-
-async fn authenticate_twitch() -> Result<TwitchTokenResponse, Box<dyn std::error::Error>> {
-    let client_id = env::var("TWITCH_CLIENT_ID")
-        .expect("TWITCH_CLIENT_ID must be set in .env file");
-    let client_secret = env::var("TWITCH_CLIENT_SECRET")
-        .expect("TWITCH_CLIENT_SECRET must be set in .env file");
-
-    let url = format!(
-        "https://id.twitch.tv/oauth2/token?client_id={}&client_secret={}&grant_type=client_credentials",
-        client_id, client_secret
-    );
-
-    let response = reqwest::Client::new()
-        .post(&url)
-        .send()
-        .await?;
-
-    let token_response: TwitchTokenResponse = response.json().await?;
-    
-    println!("Successfully authenticated with Twitch!");
-    println!("Token expires in {} seconds", token_response.expires_in);
-    
-    Ok(token_response)
-}
 
 async fn main_dev() {
     dotenv().ok();
 
     // Authenticate with Twitch before setting up the app
-    let _twitch_credentials = authenticate_twitch()
-        .await
-        .expect("Failed to authenticate with Twitch");
+    let mut igdb_manager = IGDBManager::new();
+    let expires_at = igdb_manager.authenticate().await.expect("Failed to authenticate with Twitch");
+    let datetime = DateTime::<Utc>::from(expires_at);
+    println!("Token expires at: {}\n", datetime.format("%Y-%m-%d %H:%M:%S UTC"));
 
-    // TODO: Setup the database using the IGDB API
-    let client_id = env::var("TWITCH_CLIENT_ID")
-        .expect("TWITCH_CLIENT_ID must be set in .env file");
-    let igdb_manager = IGDBManager::new(client_id, _twitch_credentials.access_token);
-    let _search_result = igdb_manager.search_games("Zelda".to_string()).await.expect("Failed to get game list");
+    // TODO: Remove this after deployment
+    let games = igdb_manager.get_games().await.expect("Failed to get game list");
+    println!("Games: {:?}\n", games);
+    let search_result = igdb_manager.search_games("Zelda".to_string()).await.expect("Failed to search for games");
+    println!("Search result: {:?}\n", search_result);
 }
 
 // Migrate from axum to Dioxus
@@ -64,10 +34,10 @@ async fn main_dev() {
 async fn main() {
     let flags = Args::parse();
     if flags.dev {
-        println!("Running in development mode");
+        println!("Running in development mode\n");
         main_dev().await;
     } else {
-        println!("Running in production mode");
+        println!("Running in production mode\n");
         // build our application with a single route
         let app = Router::new().route("/", get(|| async { "Hello, World!" }));
 

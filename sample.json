@@ -1,0 +1,81 @@
+{
+    "users": [
+        {
+            "id": -1,
+            "username": "error",
+            "name": "Error",
+            "description": "An error occurred while loading the library",
+            "games": []
+        },
+        {
+            "id": 0,
+            "username": "hyunjaemoon",
+            "name": "Hyun Jae Moon's Library",
+            "description": "A library of games that Hyun Jae Moon has played",
+            "games": [
+                {
+                    "id": 0,
+                    "name": "The Legend of Zelda: Breath of the Wild",
+                    "description": "A open-world action-adventure game",
+                    "platforms": [
+                        "Nintendo Wii U",
+                        "Nintendo Switch"
+                    ],
+                    "genres": [
+                        "Action-Adventure",
+                        "Open-World"
+                    ]
+                },
+                {
+                    "id": 1,
+                    "name": "Persona 5",
+                    "description": "A role-playing game where you control a group of students who can transform into personas to fight against the forces of evil",
+                    "platforms": [
+                        "PlayStation 4",
+                        "PlayStation 5",
+                        "PC",
+                        "Nintendo Switch",
+                        "Xbox Series X/S"
+                    ],
+                    "genres": [
+                        "Role-Playing",
+                        "Action-Adventure",
+                        "Visual Novel"
+                    ]
+                }
+            ]
+        }
+    ],
+    "games": [
+        {
+            "id": 0,
+            "name": "The Legend of Zelda: Breath of the Wild",
+            "description": "A open-world action-adventure game",
+            "platforms": [
+                "Nintendo Wii U",
+                "Nintendo Switch"
+            ],
+            "genres": [
+                "Action-Adventure",
+                "Open-World"
+            ]
+        },
+        {
+            "id": 1,
+            "name": "Persona 5",
+            "description": "A role-playing game where you control a group of students who can transform into personas to fight against the forces of evil",
+            "platforms": [
+                "PlayStation 4",
+                "PlayStation 5",
+                "PC",
+                "Nintendo Switch",
+                "Xbox Series X/S"
+            ],
+            "genres": [
+                "Role-Playing",
+                "Action-Adventure",
+                "Visual Novel"
+            ]
+        }
+    ]
+}

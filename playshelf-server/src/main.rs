@@ -1,4 +1,5 @@
 mod igdb;
+mod args;
 
 use axum::{
     routing::get,
@@ -8,6 +9,9 @@ use dotenv::dotenv;
 use igdb::IGDBManager;
 use serde::Deserialize;
 use std::env;
+
+use crate::args::Args;
+use clap::Parser;
 
 #[derive(Debug, Deserialize)]
 struct TwitchTokenResponse {
@@ -40,9 +44,7 @@ async fn authenticate_twitch() -> Result<TwitchTokenResponse, Box<dyn std::error
     Ok(token_response)
 }
 
-// Migrate from axum to Dioxus
-#[tokio::main]
-async fn main() {
+async fn main_dev() {
     dotenv().ok();
 
     // Authenticate with Twitch before setting up the app
@@ -55,11 +57,22 @@ async fn main() {
         .expect("TWITCH_CLIENT_ID must be set in .env file");
     let igdb_manager = IGDBManager::new(client_id, _twitch_credentials.access_token);
     let _search_result = igdb_manager.search_games("Zelda".to_string()).await.expect("Failed to get game list");
+}
 
-    // build our application with a single route
-    // let app = Router::new().route("/", get(|| async { "Hello, World!" }));
+// Migrate from axum to Dioxus
+#[tokio::main]
+async fn main() {
+    let flags = Args::parse();
+    if flags.dev {
+        println!("Running in development mode");
+        main_dev().await;
+    } else {
+        println!("Running in production mode");
+        // build our application with a single route
+        let app = Router::new().route("/", get(|| async { "Hello, World!" }));
 
-    // run our app with hyper, listening globally on port 3000
-    // let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
-    // axum::serve(listener, app).await.unwrap();
+        // run our app with hyper, listening globally on port 3000
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+        axum::serve(listener, app).await.unwrap();
+    }
 }

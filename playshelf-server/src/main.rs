@@ -7,11 +7,40 @@ use axum::{
 };
 use chrono::{DateTime, Utc};
 use dotenv::dotenv;
-use igdb::manager::IGDBManager;
+use igdb::manager::{IGDBManager, GameData};
 
 use crate::args::Args;
 use clap::Parser;
 
+/// Prints a list of games in a formatted, readable way
+fn print_game_data(games: &[GameData], title: &str) {
+    println!("{} ({} games):\n", title, games.len());
+    for (i, game) in games.iter().enumerate() {
+        println!("{}. {}", i + 1, game.name);
+        if !game.platforms.is_empty() {
+            println!("   Platforms: {}", game.platforms.join(", "));
+        }
+        if !game.first_release_date.is_empty() && game.first_release_date != "0" {
+            match game.first_release_date.parse::<i64>() {
+                Ok(timestamp) => {
+                    // IGDB first_release_date is a Unix timestamp in seconds
+                    if let Some(release_date) = DateTime::<Utc>::from_timestamp(timestamp, 0) {
+                        println!("   Release Date: {} (timestamp: {})", release_date.format("%Y-%m-%d"), timestamp);
+                    } else {
+                        println!("   Release Date: Invalid timestamp ({})", timestamp);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("   Release Date: Failed to parse '{}' as timestamp: {}", game.first_release_date, e);
+                }
+            }
+        }
+        if !game.genres.is_empty() {
+            println!("   Genres: {}", game.genres.join(", "));
+        }
+        println!();
+    }
+}
 
 async fn main_dev() {
     dotenv().ok();
@@ -22,11 +51,13 @@ async fn main_dev() {
     let datetime = DateTime::<Utc>::from(expires_at);
     println!("Token expires at: {}\n", datetime.format("%Y-%m-%d %H:%M:%S UTC"));
 
-    // TODO: Remove this after deployment
+    // Get List of Games
     let games = igdb_manager.get_games().await.expect("Failed to get game list");
-    println!("Games: {:?}\n", games);
+    print_game_data(&games, "Found games");
+
+    // Search for Games
     let search_result = igdb_manager.search_games("Zelda".to_string()).await.expect("Failed to search for games");
-    println!("Search result: {:?}\n", search_result);
+    print_game_data(&search_result, "Search results for 'Zelda'");
 }
 
 // Migrate from axum to Dioxus

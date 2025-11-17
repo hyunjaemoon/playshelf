@@ -89,7 +89,7 @@ impl IGDBManager {
         }
     }
 
-    pub async fn authenticate(&mut self) -> Result<SystemTime, Box<dyn std::error::Error>> {
+    pub async fn authenticate(&mut self) -> Result<SystemTime, Box<dyn std::error::Error + Send + Sync>> {
         let twtich_credentials = authenticate_twitch().await.expect("Failed to authenticate with Twitch");
         let (client_id, access_token) = twtich_credentials.get_client_id_and_access_token();
         self.client_id = client_id;
@@ -102,7 +102,7 @@ impl IGDBManager {
         &self,
         endpoint: &str,
         body: String,
-    ) -> Result<reqwest::Response, Box<dyn std::error::Error>> {
+    ) -> Result<reqwest::Response, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/{}", IGDB_URL, endpoint);
         let response = self
             .client
@@ -138,7 +138,7 @@ impl IGDBManager {
     }
 
     /// Retrieves platform information by a list of platform IDs
-    async fn get_platforms_by_ids(&self, ids: Vec<u64>) -> Result<Vec<Platform>, Box<dyn std::error::Error>> {
+    async fn get_platforms_by_ids(&self, ids: Vec<u64>) -> Result<Vec<Platform>, Box<dyn std::error::Error + Send + Sync>> {
         if ids.is_empty() {
             return Ok(Vec::new());
         }
@@ -151,7 +151,7 @@ impl IGDBManager {
     }
 
     /// Retrieves a single game by its ID
-    async fn get_games_by_ids(&self, ids: Vec<u64>) -> Result<Vec<Game>, Box<dyn std::error::Error>> {
+    async fn get_games_by_ids(&self, ids: Vec<u64>) -> Result<Vec<Game>, Box<dyn std::error::Error + Send + Sync>> {
         if ids.is_empty() {
             return Ok(Vec::new());
         }
@@ -164,7 +164,7 @@ impl IGDBManager {
     }
 
     /// Retrieves genre information by a list of genre IDs
-    async fn get_genres_by_ids(&self, ids: Vec<u64>) -> Result<Vec<Genre>, Box<dyn std::error::Error>> {
+    async fn get_genres_by_ids(&self, ids: Vec<u64>) -> Result<Vec<Genre>, Box<dyn std::error::Error + Send + Sync>> {
         if ids.is_empty() {
             return Ok(Vec::new());
         }
@@ -211,7 +211,7 @@ impl IGDBManager {
         }
     }
     
-    async fn games_data_from_games(&self, games: Vec<Game>) -> Result<Vec<GameData>, Box<dyn std::error::Error>> {
+    async fn games_data_from_games(&self, games: Vec<Game>) -> Result<Vec<GameData>, Box<dyn std::error::Error + Send + Sync>> {
         // Collect all unique platform and genre IDs
         let mut platform_ids = std::collections::HashSet::new();
         let mut genre_ids = std::collections::HashSet::new();
@@ -255,7 +255,7 @@ impl IGDBManager {
     }
 
     /// Retrieves all games from the IGDB API
-    pub async fn get_games(&self) -> Result<Vec<GameData>, Box<dyn std::error::Error>> {
+    pub async fn get_games(&self) -> Result<Vec<GameData>, Box<dyn std::error::Error + Send + Sync>> {
         let body = "fields name,platforms,first_release_date,genres;".to_string();
         let response = self.make_request("v4/games", body).await?;
         let games: Vec<Game> = response.json().await?;
@@ -263,7 +263,7 @@ impl IGDBManager {
     }
 
     /// Searches for games by query string
-    pub async fn search_games(&self, query: String) -> Result<Vec<GameData>, Box<dyn std::error::Error>> {
+    pub async fn search_games(&self, query: String) -> Result<Vec<GameData>, Box<dyn std::error::Error + Send + Sync>> {
         let body = format!("search \"{}\"; fields game,name,platform; limit 10;", query);
         let response = self.make_request("v4/search", body).await?;
         

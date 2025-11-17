@@ -1,4 +1,5 @@
 mod args;
+mod handlers;
 mod igdb;
 
 use axum::{
@@ -8,6 +9,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use dotenv::dotenv;
 use igdb::manager::{IGDBManager, GameData};
+use std::sync::Arc;
 
 use crate::args::Args;
 use clap::Parser;
@@ -69,10 +71,24 @@ async fn main() {
         main_dev().await;
     } else {
         println!("Running in production mode\n");
-        // build our application with a single route
-        let app = Router::new().route("/", get(|| async { "Hello, World!" }));
+        
+        // Authenticate with Twitch before setting up the app
+        dotenv().ok();
+        let mut igdb_manager = IGDBManager::new();
+        let expires_at = igdb_manager.authenticate().await.expect("Failed to authenticate with Twitch");
+        let datetime = DateTime::<Utc>::from(expires_at);
+        println!("Token expires at: {}\n", datetime.format("%Y-%m-%d %H:%M:%S UTC"));
+        
+        // Wrap IGDBManager in Arc to share across requests
+        let igdb_manager = Arc::new(igdb_manager);
+        
+        // build our application with routes that have access to IGDBManager
+        let app = Router::new()
+            .route("/", get(|| async { "Hello, World!" }))
+            .route("/games", get(handlers::get_games_handler))
+            .with_state(igdb_manager);
 
-        // run our app with hyper, listening globally on port 3000
+        // run our app with hyper, listening globally on port 8080
         let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
         axum::serve(listener, app).await.unwrap();
     }

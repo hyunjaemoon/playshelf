@@ -27,7 +27,7 @@ struct TwitchTokenResponse {
     token_type: String,
 }
 
-pub async fn authenticate_twitch() -> Result<TwitchCredentials, Box<dyn std::error::Error>> {
+pub async fn authenticate_twitch() -> Result<TwitchCredentials, Box<dyn std::error::Error + Send + Sync>> {
     let client_id = env::var("TWITCH_CLIENT_ID")
         .expect("TWITCH_CLIENT_ID must be set in .env file");
     let client_secret = env::var("TWITCH_CLIENT_SECRET")

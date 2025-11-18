@@ -53,19 +53,6 @@ struct Genre {
     name: Option<String>,
 }
 
-/// Represents a search result item from the IGDB API
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-struct SearchItem {
-    /// Unique identifier for the search item
-    id: u64,
-    /// Game ID associated with this search item (if applicable)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    game: Option<u64>,
-    /// Name of the search item
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
-}
-
 /// Manager for interacting with the IGDB API
 /// 
 /// This struct handles authentication and provides methods to query
@@ -148,19 +135,6 @@ impl IGDBManager {
         let response = self.make_request("v4/platforms", body).await?;
         let platforms: Vec<Platform> = response.json().await?;
         Ok(platforms)
-    }
-
-    /// Retrieves a single game by its ID
-    async fn get_games_by_ids(&self, ids: Vec<u64>) -> Result<Vec<Game>, Box<dyn std::error::Error + Send + Sync>> {
-        if ids.is_empty() {
-            return Ok(Vec::new());
-        }
-
-        let ids_str = self.format_ids(&ids);
-        let body = format!("fields name,platforms,first_release_date,genres; where id = {};", ids_str);
-        let response = self.make_request("v4/games", body).await?;
-        let games: Vec<Game> = response.json().await?;
-        Ok(games)
     }
 
     /// Retrieves genre information by a list of genre IDs
@@ -264,13 +238,9 @@ impl IGDBManager {
 
     /// Searches for games by query string
     pub async fn search_games(&self, query: String) -> Result<Vec<GameData>, Box<dyn std::error::Error + Send + Sync>> {
-        let body = format!("search \"{}\"; fields game,name,platform; limit 10;", query);
-        let response = self.make_request("v4/search", body).await?;
-        
-        // Try to parse as array first, if that fails, check if it's an error object
-        let search_items: Vec<SearchItem> = response.json().await?;
-        let game_ids: Vec<u64> = search_items.into_iter().filter_map(|item| item.game).collect();
-        let games = self.get_games_by_ids(game_ids).await?;
+        let body = format!("search \"{}\"; fields name,platforms,first_release_date,genres;", query);
+        let response = self.make_request("v4/games", body).await?;
+        let games: Vec<Game> = response.json().await?;
         self.games_data_from_games(games).await
     }
 }

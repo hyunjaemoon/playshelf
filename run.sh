@@ -48,11 +48,6 @@ else
     program_args=("$@")
 fi
 
-# Set default args if none provided
-if [[ ${#program_args[@]} -eq 0 ]]; then
-    program_args=("--dev")
-fi
-
 echo "Running package: $package"
 if [[ ${#program_args[@]} -gt 0 ]]; then
     echo "With arguments: ${program_args[@]}"

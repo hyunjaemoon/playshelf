@@ -86,6 +86,7 @@ async fn main() {
         let app = Router::new()
             .route("/", get(|| async { "Hello, World!" }))
             .route("/games", get(handlers::get_games_handler))
+            .route("/games/search", get(handlers::search_games_handler))
             .with_state(igdb_manager);
 
         // run our app with hyper, listening globally on port 8080

@@ -8,6 +8,7 @@ const IGDB_URL: &str = "https://api.igdb.com";
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct GameData {
+    pub id: u64,
     pub name: String,
     pub platforms: Vec<String>,
     pub first_release_date: String,
@@ -178,6 +179,7 @@ impl IGDBManager {
             .unwrap_or_default();
 
         GameData {
+            id: game.id.clone(),
             name: game.name.clone().unwrap_or_default(),
             platforms,
             first_release_date: game.first_release_date.clone().unwrap_or_default().to_string(),

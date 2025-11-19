@@ -1,6 +1,7 @@
 mod args;
 mod handlers;
 mod igdb;
+mod user;
 
 use axum::{
     routing::get,

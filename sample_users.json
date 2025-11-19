@@ -1,0 +1,42 @@
+{
+    "users": [
+        {
+            "id": 0,
+            "username": "hyunjaemoon",
+            "name": "Hyun Jae Moon's Library",
+            "description": "A library of games that Hyun Jae Moon has played",
+            "games": [
+                {
+                    "id": 0,
+                    "name": "The Legend of Zelda: Breath of the Wild",
+                    "first_release_date": "1488499200",
+                    "platforms": [
+                        "Nintendo Wii U",
+                        "Nintendo Switch"
+                    ],
+                    "genres": [
+                        "Action-Adventure",
+                        "Open-World"
+                    ]
+                },
+                {
+                    "id": 1,
+                    "name": "Persona 5",
+                    "first_release_date": "1473897600",
+                    "platforms": [
+                        "PlayStation 4",
+                        "PlayStation 5",
+                        "PC",
+                        "Nintendo Switch",
+                        "Xbox Series X/S"
+                    ],
+                    "genres": [
+                        "Role-Playing",
+                        "Action-Adventure",
+                        "Visual Novel"
+                    ]
+                }
+            ]
+        }
+    ]
+}

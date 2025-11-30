@@ -7,6 +7,7 @@ use axum::{
     routing::get,
     Router,
 };
+use tower_http::cors::CorsLayer;
 use chrono::{DateTime, Utc};
 use dotenv::dotenv;
 use igdb::manager::{IGDBManager, GameData};
@@ -88,10 +89,11 @@ async fn main() {
             .route("/", get(|| async { "Hello, World!" }))
             .route("/games", get(handlers::get_games_handler))
             .route("/games/search", get(handlers::search_games_handler))
+            .layer(CorsLayer::permissive())
             .with_state(igdb_manager);
 
-        // run our app with hyper, listening globally on port 8080
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+        // run our app with hyper, listening globally on port 8081
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
         axum::serve(listener, app).await.unwrap();
     }
 }

@@ -3533,7 +3533,12 @@ checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 name = "playshelf-client"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "dioxus",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "urlencoding",
 ]
 
 [[package]]
@@ -3548,6 +3553,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tower-http",
 ]
 
 [[package]]

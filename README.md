@@ -8,6 +8,14 @@ Online social cataloging service for games. A full-stack application for discove
 
 **Frontend**: Dioxus cross-platform UI framework.
 
+## Development Phase
+
+**Searching**: Completed
+
+**Cataloging**: In Progress
+
+**User Flow**: In Progress
+
 ## Author
 
 Hyun Jae Moon [calhyunjaemoon@gmail.com]

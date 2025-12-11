@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::igdb::manager::GameData;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct User {
-    pub id: u64,
+    pub id: u128,
     pub username: String,
     pub name: String,
     pub description: String,
@@ -12,9 +13,9 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(id: u64, username: String, name: String, description: String) -> Self {
+    pub fn new(username: String, name: String, description: String) -> Self {
         Self {
-            id,
+            id: Uuid::new_v4().as_u128(),
             username,
             name,
             description,
@@ -42,17 +43,14 @@ mod tests {
     const TEST_USERNAME: &str = "testuser";
     const TEST_NAME: &str = "Test User";
     const TEST_DESCRIPTION: &str = "Test description";
-    const TEST_ID: u64 = 1;
 
     #[test]
     fn test_user_new() {
         let user = User::new(
-            TEST_ID,
             TEST_USERNAME.to_string(),
             TEST_NAME.to_string(),
             TEST_DESCRIPTION.to_string(),
         );
-        assert_eq!(user.id, TEST_ID);
         assert_eq!(user.username, TEST_USERNAME);
         assert_eq!(user.name, TEST_NAME);
         assert_eq!(user.description, TEST_DESCRIPTION);
@@ -88,7 +86,6 @@ mod tests {
         let user = &users[0];
         
         // Check user fields
-        assert_eq!(user.id, 0, "User id should be 0");
         assert_eq!(user.username, "hyunjaemoon", "Username should match");
         assert_eq!(user.name, "Hyun Jae Moon's Library", "Name should match");
         assert_eq!(

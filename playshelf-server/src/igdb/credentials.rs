@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use std::env;
 use std::time::SystemTime;
 use tokio::time::Duration;
 
@@ -27,11 +26,31 @@ struct TwitchTokenResponse {
     token_type: String,
 }
 
+async fn get_aws_secret(name: &str) -> String {
+    // Authenticate with AWS
+    let config = aws_config::defaults(aws_config::BehaviorVersion::latest())
+        .region("us-east-2") // Ensure this matches your SSM region
+        .load()
+        .await;
+    let client = aws_sdk_ssm::Client::new(&config);
+
+    let resp = client
+        .get_parameter()
+        .name(name)
+        .with_decryption(true) // Crucial for SecureString
+        .send()
+        .await
+        .expect("Failed to fetch parameter");
+
+    resp.parameter()
+        .and_then(|p| p.value())
+        .unwrap_or("")
+        .to_string()
+}
+
 pub async fn authenticate_twitch() -> Result<TwitchCredentials, Box<dyn std::error::Error + Send + Sync>> {
-    let client_id = env::var("TWITCH_CLIENT_ID")
-        .expect("TWITCH_CLIENT_ID must be set in .env file");
-    let client_secret = env::var("TWITCH_CLIENT_SECRET")
-        .expect("TWITCH_CLIENT_SECRET must be set in .env file");
+    let client_id = get_aws_secret("/playshelf/prod/twitch-client-id").await;
+    let client_secret = get_aws_secret("/playshelf/prod/twitch-client-secret").await;
 
     let url = format!(
         "https://id.twitch.tv/oauth2/token?client_id={}&client_secret={}&grant_type=client_credentials",

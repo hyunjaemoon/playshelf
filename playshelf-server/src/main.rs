@@ -73,9 +73,9 @@ async fn main() {
         main_dev().await;
     } else {
         println!("Running in production mode\n");
-        
-        // Authenticate with Twitch before setting up the app
         dotenv().ok();
+
+        // Authenticate with Twitch before setting up the app
         let mut igdb_manager = IGDBManager::new();
         let expires_at = igdb_manager.authenticate().await.expect("Failed to authenticate with Twitch");
         let datetime = DateTime::<Utc>::from(expires_at);

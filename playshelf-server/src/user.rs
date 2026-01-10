@@ -1,7 +1,12 @@
+use aws_sdk_dynamodb::types::AttributeValue;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use uuid::Uuid;
 
 use crate::igdb::manager::GameData;
+
+const USER_TABLE_NAME: &str = "playshelf_user";
+const USER_ID_ATTRIBUTE: &str = "user_id";
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct User {
@@ -34,6 +39,41 @@ impl User {
     pub fn get_games(&self) -> &Vec<GameData> {
         &self.games
     }
+
+    pub async fn update_db(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let config = aws_config::defaults(aws_config::BehaviorVersion::latest())
+            .region("us-east-2") // Ensure this matches your SSM region
+            .load()
+            .await;
+        let client = aws_sdk_dynamodb::Client::new(&config);
+        let id_av = AttributeValue::S(self.id.to_string());
+        let username_av = AttributeValue::S(self.username.clone());
+        let name_av = AttributeValue::S(self.name.clone());
+        let description_av = AttributeValue::S(self.description.clone());
+        let games_json = serde_json::to_string(&self.games).unwrap();
+        let games_av = AttributeValue::S(games_json);
+
+        let request = client
+            .put_item()
+            .table_name(USER_TABLE_NAME)
+            .item(USER_ID_ATTRIBUTE, id_av)
+            .item("username", username_av)
+            .item("name", name_av)
+            .item("description", description_av)
+            .item("games", games_av);
+
+        println!("Executing request [{request:?}] to add item...");
+
+        let resp = request.send().await?;
+
+        if let Some(attributes) = resp.attributes() {
+            println!("Response attributes: {attributes:?}");
+        } else {
+            println!("PutItem succeeded (no attributes returned)");
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -58,56 +98,56 @@ mod tests {
 
     #[test]
     fn test_user_golden_file() {
-        use std::fs;
         use serde_json::json;
+        use std::fs;
 
         // Read the golden file (located in workspace root, one level up from package root)
         let golden_file_path = "../sample_users.json";
-        let golden_content = fs::read_to_string(golden_file_path)
-            .expect("Failed to read golden file");
-        
+        let golden_content =
+            fs::read_to_string(golden_file_path).expect("Failed to read golden file");
+
         // Parse the JSON structure
-        let golden_json: serde_json::Value = serde_json::from_str(&golden_content)
-            .expect("Failed to parse golden file JSON");
-        
+        let golden_json: serde_json::Value =
+            serde_json::from_str(&golden_content).expect("Failed to parse golden file JSON");
+
         // Extract users array
-        let users_array = golden_json["users"].as_array()
+        let users_array = golden_json["users"]
+            .as_array()
             .expect("Golden file should contain a 'users' array");
-        
+
         // Deserialize each user
         let users: Vec<User> = users_array
             .iter()
-            .map(|user_json| serde_json::from_value::<User>(user_json.clone())
-                .expect("Failed to deserialize user"))
+            .map(|user_json| {
+                serde_json::from_value::<User>(user_json.clone())
+                    .expect("Failed to deserialize user")
+            })
             .collect();
-        
+
         // Verify field values match the golden file
         assert_eq!(users.len(), 1, "Should have exactly one user");
         let user = &users[0];
-        
+
         // Check user fields
         assert_eq!(user.username, "hyunjaemoon", "Username should match");
         assert_eq!(user.name, "Hyun Jae Moon's Library", "Name should match");
         assert_eq!(
-            user.description,
-            "A library of games that Hyun Jae Moon has played",
+            user.description, "A library of games that Hyun Jae Moon has played",
             "Description should match"
         );
-        
+
         // Check games
         assert_eq!(user.games.len(), 2, "User should have 2 games");
-        
+
         // Check first game
         let game1 = &user.games[0];
         assert_eq!(game1.id, 0, "First game id should be 0");
         assert_eq!(
-            game1.name,
-            "The Legend of Zelda: Breath of the Wild",
+            game1.name, "The Legend of Zelda: Breath of the Wild",
             "First game name should match"
         );
         assert_eq!(
-            game1.first_release_date,
-            "1488499200",
+            game1.first_release_date, "1488499200",
             "First game release date should match"
         );
         assert_eq!(
@@ -120,14 +160,13 @@ mod tests {
             vec!["Action-Adventure", "Open-World"],
             "First game genres should match"
         );
-        
+
         // Check second game
         let game2 = &user.games[1];
         assert_eq!(game2.id, 1, "Second game id should be 1");
         assert_eq!(game2.name, "Persona 5", "Second game name should match");
         assert_eq!(
-            game2.first_release_date,
-            "1473897600",
+            game2.first_release_date, "1473897600",
             "Second game release date should match"
         );
         assert_eq!(
@@ -146,16 +185,31 @@ mod tests {
             vec!["Role-Playing", "Action-Adventure", "Visual Novel"],
             "Second game genres should match"
         );
-        
+
         // Serialize back to JSON
         let serialized_json = json!({
             "users": users
         });
-        
+
         // Compare with golden file (parse both as Value for comparison)
-        let golden_value: serde_json::Value = serde_json::from_str(&golden_content)
-            .expect("Failed to parse golden file");
-        
-        assert_eq!(serialized_json, golden_value, "Serialized users should match golden file");
+        let golden_value: serde_json::Value =
+            serde_json::from_str(&golden_content).expect("Failed to parse golden file");
+
+        assert_eq!(
+            serialized_json, golden_value,
+            "Serialized users should match golden file"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_user_update_db() {
+        // Load .env from workspace root (one level up from playshelf-server)
+        dotenv::from_path("../.env").ok();
+        let user = User::new(
+            TEST_USERNAME.to_string(),
+            TEST_NAME.to_string(),
+            TEST_DESCRIPTION.to_string(),
+        );
+        user.update_db().await.expect("Failed to update user in DB");
     }
 }
